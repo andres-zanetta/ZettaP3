@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Z.BD.DATA;
 using Z.BD.DATA.Entity;
+using Z.Shared.DTOS;
 
 namespace Z.Server.Controllers
 {
@@ -23,7 +24,7 @@ namespace Z.Server.Controllers
         }
 
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<Cliente>> Get(int id)
+        public async Task<ActionResult<Cliente>> GetById(int id)
         {
             Cliente? C = await _context.Clientes.Where(c => c.Id == id).FirstOrDefaultAsync();
             if (C == null)
@@ -37,32 +38,40 @@ namespace Z.Server.Controllers
         public async Task<ActionResult<List<Cliente>>> Get(string nombre)
         {
             var clientes = await _context.Clientes.Where(c => c.Nombre.Contains(nombre)).ToListAsync();
-            if (clientes == null || clientes.Count == 0)
-            {
+
+            if (!clientes.Any())
                 return NotFound($"No se encontraron clientes con el nombre que contiene '{nombre}'");
-            }
+
             return clientes;
         }
 
         [HttpGet("existe/{id:int}")]
         public async Task<ActionResult<bool>> Existe(int id)
         {
-            var existe = await _context.Clientes.AnyAsync(x => x.Id == id);
-            return existe;
+            //var existe = await _context.Clientes.AnyAsync(x => x.Id == id);
+            //return existe;
+            return await _context.Clientes.AnyAsync(c => c.Id == id);
         }
 
         [HttpPost]
-        public async Task<ActionResult<int>> Post(Cliente c)
+        public async Task<ActionResult<Cliente>> Post(CrearClienteDTO cdto)
         {
             try
             {
+                Cliente c = new Cliente();
+                c.Nombre = cdto.Nombre;
+                c.Direccion = cdto.Direccion;
+                c.Telefono = cdto.Telefono;
+                c.Email = cdto.Email;
+
                 _context.Clientes.Add(c);
                 await _context.SaveChangesAsync();
-                return c.Id;
+
+                return CreatedAtAction(nameof(GetById), new { id = c.Id }, c);
             }
-            catch (Exception e)
+            catch
             {
-                return BadRequest(e.Message);//404
+                return BadRequest("Ocurrió un error al guardar el cliente");
             }
         }
 
@@ -93,7 +102,7 @@ namespace Z.Server.Controllers
             }
             catch (Exception e)
             {
-                return BadRequest(e.Message);
+                return BadRequest("Ocurrió un error al actualizar el cliente");
             }
 
         }

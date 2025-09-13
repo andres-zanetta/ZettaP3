@@ -14,4 +14,10 @@ namespace Z.Shared.Enums
         RefrigeraicionAireAcondicionado,
         Plomeria
     }
+
+    // 0: Electricidad
+    // 1: EnergiaSolar
+    // 2: Gas
+    // 3: RefrigeraicionAireAcondicionado
+    // 4: Plomeria
 }
