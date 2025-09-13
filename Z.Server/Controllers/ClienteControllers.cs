@@ -7,7 +7,7 @@ namespace Z.Server.Controllers
 {
     [ApiController]
     [Route("api/Clientes")]
-    public class ClienteControllers: ControllerBase
+    public class ClienteControllers : ControllerBase
     {
         private readonly Context _context;
 
@@ -17,9 +17,38 @@ namespace Z.Server.Controllers
 
         }
         [HttpGet]
-        public async Task<ActionResult<List<Cliente>>>Get()
+        public async Task<ActionResult<List<Cliente>>> Get()
         {
             return await _context.Clientes.ToListAsync();
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<Cliente>> Get(int id)
+        {
+            Cliente? C = await _context.Clientes.Where(c => c.Id == id).FirstOrDefaultAsync();
+            if (C == null)
+            {
+                return NotFound($"El cliente con id {id} no existe");
+            }
+            return C;
+        }
+
+        [HttpGet("{nombre}")]
+        public async Task<ActionResult<List<Cliente>>> Get(string nombre)
+        {
+            var clientes = await _context.Clientes.Where(c => c.Nombre.Contains(nombre)).ToListAsync();
+            if (clientes == null || clientes.Count == 0)
+            {
+                return NotFound($"No se encontraron clientes con el nombre que contiene '{nombre}'");
+            }
+            return clientes;
+        }
+
+        [HttpGet("existe/{id:int}")]
+        public async Task<ActionResult<bool>> Existe(int id)
+        {
+            var existe = await _context.Clientes.AnyAsync(x => x.Id == id);
+            return existe;
         }
 
         [HttpPost]
@@ -33,18 +62,18 @@ namespace Z.Server.Controllers
             }
             catch (Exception e)
             {
-                return BadRequest(e.Message);
+                return BadRequest(e.Message);//404
             }
         }
 
         [HttpPut("{id:int}")]
-        public async Task<ActionResult> Put(int id, [FromBody]Cliente c)
+        public async Task<ActionResult> Put(int id, [FromBody] Cliente c)
         {
             if (id != c.Id)
             {
                 return BadRequest("El id del cliente no coincide con el id de la url");
             }
-            var clienteDb = await _context.Clientes.Where(c=>c.Id==id).FirstOrDefaultAsync();
+            var clienteDb = await _context.Clientes.Where(c => c.Id == id).FirstOrDefaultAsync();
 
             if (clienteDb == null)
             {
@@ -67,6 +96,22 @@ namespace Z.Server.Controllers
                 return BadRequest(e.Message);
             }
 
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<ActionResult> Delete(int id)
+        {
+            var existe = await _context.Clientes.AnyAsync(y => y.Id == id);
+            if (!existe)
+            {
+                return NotFound($"El cliente con id {id} no existe");
+            }
+           Cliente EntidadBorrar = new Cliente();
+            EntidadBorrar.Id = id;
+
+            _context.Remove(EntidadBorrar);
+            await _context.SaveChangesAsync();
+            return Ok();
         }
     }
 }
