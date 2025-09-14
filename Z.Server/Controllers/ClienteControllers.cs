@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Z.BD.DATA;
 using Z.BD.DATA.Entity;
+using Z.Server.Repositorio;
 using Z.Shared.DTOS;
 
 namespace Z.Server.Controllers
@@ -11,25 +12,27 @@ namespace Z.Server.Controllers
     [Route("api/Clientes")]
     public class ClienteControllers : ControllerBase
     {
-        private readonly Context _context;
+      
         private readonly IMapper maper;
+        private readonly IClienteRepositorio repositorio;
 
-        public ClienteControllers(Context context)
+        public ClienteControllers(IClienteRepositorio repositorio, IMapper maper)
         {
-            this._context = context;
+         
             this.maper = maper;
-
+            this.repositorio = repositorio;
         }
         [HttpGet]
         public async Task<ActionResult<List<Cliente>>> Get()
         {
-            return await _context.Clientes.ToListAsync();
+            return await repositorio.Select();
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Cliente>> GetById(int id)
         {
-            Cliente? C = await _context.Clientes.Where(c => c.Id == id).FirstOrDefaultAsync();
+            
+            Cliente? C = await repositorio.SelectById(id);
             if (C == null)
             {
                 return NotFound($"El cliente con id {id} no existe");
@@ -37,27 +40,33 @@ namespace Z.Server.Controllers
             return C;
         }
 
-        [HttpGet("{nombre}")]
-        public async Task<ActionResult<List<Cliente>>> Get(string nombre)
+        [HttpGet("GetByNombre/{nombre}")]
+        public async Task<ActionResult<List<Cliente>>> GetByNombre(string nombre)
         {
-            var clientes = await _context.Clientes.Where(c => c.Nombre.Contains(nombre)).ToListAsync();
+            Cliente? C = await repositorio.SelectByNombre(nombre);
 
-            if (!clientes.Any())
+            if (C == null)
+            {
                 return NotFound($"No se encontraron clientes con el nombre que contiene '{nombre}'");
+            }
+            // El método debe devolver una lista, pero actualmente devuelve un solo Cliente.
+            // Solución: Cambiar el tipo de retorno y la lógica para devolver una lista.
+            // Si SelectByNombre realmente devuelve una lista, cambia la firma del repositorio y aquí.
+            // Si no, crea una lista con el resultado.
 
-            return clientes;
+            return new List<Cliente> { C };
         }
 
         [HttpGet("existe/{id:int}")]
         public async Task<ActionResult<bool>> Existe(int id)
         {
-            //var existe = await _context.Clientes.AnyAsync(x => x.Id == id);
-            //return existe;
-            return await _context.Clientes.AnyAsync(c => c.Id == id);
+            var existe = await repositorio.Existe(id);
+            return existe;
+           
         }
 
         [HttpPost]
-        public async Task<ActionResult<Cliente>> Post(CrearClienteDTO cdto)
+        public async Task<ActionResult<int>> Post(CrearClienteDTO cdto)
         {
             try
             {
@@ -69,10 +78,9 @@ namespace Z.Server.Controllers
 
                 Cliente c=maper.Map<Cliente>(cdto);
 
-                _context.Clientes.Add(c);
-                await _context.SaveChangesAsync();
+          
 
-                return CreatedAtAction(nameof(GetById), new { id = c.Id }, c);
+                return await repositorio.Insert(c);
             }
             catch
             {
@@ -87,7 +95,7 @@ namespace Z.Server.Controllers
             {
                 return BadRequest("El id del cliente no coincide con el id de la url");
             }
-            var clienteDb = await _context.Clientes.Where(c => c.Id == id).FirstOrDefaultAsync();
+            var clienteDb = await repositorio.SelectById(id);
 
             if (clienteDb == null)
             {
@@ -101,8 +109,7 @@ namespace Z.Server.Controllers
 
             try
             {
-                _context.Clientes.Update(clienteDb);
-                await _context.SaveChangesAsync();
+                await repositorio.Update(id, clienteDb);
                 return Ok();
             }
             catch (Exception e)
@@ -115,17 +122,20 @@ namespace Z.Server.Controllers
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> Delete(int id)
         {
-            var existe = await _context.Clientes.AnyAsync(y => y.Id == id);
+            var existe = await repositorio.Existe(id);
             if (!existe)
             {
                 return NotFound($"El cliente con id {id} no existe");
             }
-           Cliente EntidadBorrar = new Cliente();
-            EntidadBorrar.Id = id;
-
-            _context.Remove(EntidadBorrar);
-            await _context.SaveChangesAsync();
-            return Ok();
+            if (await repositorio.Delete(id))
+            {
+                return Ok();
+            }
+            else
+            {
+                return BadRequest("Ocurrió un error al eliminar el cliente");
+            }
+            
         }
     }
 }

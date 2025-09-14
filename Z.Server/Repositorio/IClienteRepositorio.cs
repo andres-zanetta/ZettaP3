@@ -4,6 +4,6 @@ namespace Z.Server.Repositorio
 {
     public interface IClienteRepositorio: IRepositorio<Cliente>
     {
-
+        Task<Cliente> SelectByNombre(string nombre);
     }
 }

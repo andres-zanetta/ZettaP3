@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Z.BD.DATA;
 using Z.BD.DATA.Entity;
@@ -11,8 +12,9 @@ namespace Z.Server.Controllers
     public class PresupuestoController : ControllerBase
     {
         private readonly Context _context;
+        private readonly IMapper mapper;
 
-        public PresupuestoController(Context context)
+        public PresupuestoController(Context context, IMapper mapper)
         {
             _context = context;
         }
