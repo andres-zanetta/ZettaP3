@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Z.BD.DATA;
 using Z.BD.DATA.Entity;
@@ -11,10 +12,12 @@ namespace Z.Server.Controllers
     public class ClienteControllers : ControllerBase
     {
         private readonly Context _context;
+        private readonly IMapper maper;
 
         public ClienteControllers(Context context)
         {
             this._context = context;
+            this.maper = maper;
 
         }
         [HttpGet]
@@ -58,11 +61,13 @@ namespace Z.Server.Controllers
         {
             try
             {
-                Cliente c = new Cliente();
-                c.Nombre = cdto.Nombre;
-                c.Direccion = cdto.Direccion;
-                c.Telefono = cdto.Telefono;
-                c.Email = cdto.Email;
+                //Cliente c = new Cliente();
+                //c.Nombre = cdto.Nombre;
+                //c.Direccion = cdto.Direccion;
+                //c.Telefono = cdto.Telefono;
+                //c.Email = cdto.Email;
+
+                Cliente c=maper.Map<Cliente>(cdto);
 
                 _context.Clientes.Add(c);
                 await _context.SaveChangesAsync();

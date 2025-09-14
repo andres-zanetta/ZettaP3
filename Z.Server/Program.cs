@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json.Serialization;
 using Z.BD.DATA;
+using AutoMapper;
+using Z.Server.Repositorio;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +19,9 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddDbContext<Context>(op => op.UseSqlServer("name=conn"));
 
+builder.Services.AddAutoMapper(typeof(Program));
 
+builder.Services.AddScoped<IClienteRepositorio, ClienteRepositorio>();
 
 var app = builder.Build();
 

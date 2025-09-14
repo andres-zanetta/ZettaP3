@@ -46,7 +46,7 @@ namespace Z.Server.Controllers
         [HttpGet("existe/{id:int}")]
         public async Task<ActionResult<bool>> Existe(int id)
         {
-            //var existe = await _context.Presupuesto.AnyAsync(x => x.Id == id);
+            //var existe = await _context.Clientes.AnyAsync(x => x.Id == id);
             //return existe;
             return await _context.Presupuestos.AnyAsync(c => c.Id == id);
         }
