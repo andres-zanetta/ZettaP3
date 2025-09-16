@@ -25,7 +25,7 @@ namespace Z.Server.Controllers
         [HttpGet]
         public async Task<ActionResult<List<Cliente>>> Get()
         {
-            return await repositorio.Select();
+            return await repositorio.SelectByRubro();
         }
 
         [HttpGet("{id:int}")]
@@ -76,9 +76,7 @@ namespace Z.Server.Controllers
                 //c.Telefono = cdto.Telefono;
                 //c.Email = cdto.Email;
 
-                Cliente c=maper.Map<Cliente>(cdto);
-
-          
+                Cliente c=maper.Map<Cliente>(cdto); /*convierto el cliente en un dto*/
 
                 return await repositorio.Insert(c);
             }

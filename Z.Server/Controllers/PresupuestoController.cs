@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Z.BD.DATA;
 using Z.BD.DATA.Entity;
+using Z.Server.Repositorio;
 using Z.Shared.Enums;
 
 namespace Z.Server.Controllers
@@ -11,32 +12,27 @@ namespace Z.Server.Controllers
     [Route("api/Presupuesto")]
     public class PresupuestoController : ControllerBase
     {
-        private readonly Context _context;
+      
         private readonly IMapper mapper;
+        private readonly IPresupuestoRepositorio repositorio;
 
-        public PresupuestoController(Context context, IMapper mapper)
+        public PresupuestoController(IPresupuestoRepositorio repositorio)
         {
-            _context = context;
+           this.repositorio = repositorio;
         }
 
         // GET: api/Presupuesto
         [HttpGet]
         public async Task<ActionResult<List<Presupuesto>>> Get()
         {
-            return await _context.Presupuestos
-                .Include(p => p.Cliente)
-                .Include(p => p.Items)
-                .ToListAsync();
+            return await repositorio.SelectByRubro();
         }
 
         // GET: api/Presupuesto/por-id/5
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Presupuesto>> GetById(int id)
         {
-            var presupuesto = await _context.Presupuestos
-                .Include(p => p.Cliente)
-                .Include(p => p.Items)
-                .FirstOrDefaultAsync(p => p.Id == id);
+            var presupuesto = await repositorio.SelectById(id);
 
             if (presupuesto == null)
                 return NotFound($"El presupuesto con id {id} no existe");
@@ -50,50 +46,47 @@ namespace Z.Server.Controllers
         {
             //var existe = await _context.Clientes.AnyAsync(x => x.Id == id);
             //return existe;
-            return await _context.Presupuestos.AnyAsync(c => c.Id == id);
+            return await repositorio.Existe(id);
         }
 
         // GET: api/Presupuesto/por-cliente/3
         [HttpGet("por-cliente/{clienteId:int}")]
         public async Task<ActionResult<List<Presupuesto>>> GetByCliente(int clienteId)
         {
-            var presupuestos = await _context.Presupuestos
+            // Reemplaza la línea problemática en el método GetByCliente
+            var presupuestos = await repositorio.SelectByCliente();
+            // Solución: filtra por ClienteId en vez de Cliente
+            var filtrados = presupuestos
+                .OfType<Presupuesto>()
                 .Where(p => p.ClienteId == clienteId)
-                .Include(p => p.Items)
-                .ToListAsync();
+                .ToList();
 
-            if (!presupuestos.Any())
+            if (!filtrados.Any())
                 return NotFound($"No se encontraron presupuestos para el cliente {clienteId}");
 
-            return presupuestos;
+            return filtrados;
         }
 
         // GET: api/Presupuesto/por-rubro/Electricidad
         [HttpGet("por-rubro/{rubro}")]
         public async Task<ActionResult<List<Presupuesto>>> GetByRubro(Rubro rubro)
         {
-            var presupuestos = await _context.Presupuestos
-                .Where(p => p.Rubro == rubro)
-                .Include(p => p.Cliente)
-                .Include(p => p.Items)
-                .ToListAsync();
+            var presupuestos = await repositorio.SelectByRubro();
+            var filtrados = presupuestos.Where(p => p.Rubro == rubro).ToList();
 
-            if (!presupuestos.Any())
+            if (!filtrados.Any())
                 return NotFound($"No se encontraron presupuestos para el rubro {rubro}");
 
-            return presupuestos;
+            return filtrados;
         }
 
         // POST: api/Presupuesto
         [HttpPost]
-        public async Task<ActionResult<Presupuesto>> Post(Presupuesto p)
+        public async Task<ActionResult<int>> Post(Presupuesto p)
         {
             try
             {
-                _context.Presupuestos.Add(p);
-                await _context.SaveChangesAsync();
-
-                return CreatedAtAction(nameof(GetById), new { id = p.Id }, p);
+              return await repositorio.Insert(p);
             }
             catch
             {
@@ -105,22 +98,20 @@ namespace Z.Server.Controllers
         [HttpPut("{id:int}")]
         public async Task<ActionResult> Put(int id, [FromBody] Presupuesto p)
         {
-            if (id != p.Id)
-                return BadRequest("El id no coincide con el presupuesto enviado");
-
-            var presupuestoDb = await _context.Presupuestos.FindAsync(id);
-
-            if (presupuestoDb == null)
-                return NotFound($"El presupuesto con id {id} no existe");
-
-            presupuestoDb.ClienteId = p.ClienteId;
-            presupuestoDb.Rubro = p.Rubro;
-            presupuestoDb.Total = p.Total;
-
             try
             {
-                await _context.SaveChangesAsync();
-                return Ok(presupuestoDb);
+                if (id != p.Id)
+                {
+                    return BadRequest("El id no coincide con el presupuesto enviado");
+                }
+                var presupuestoDb = await repositorio.Update(id, p);
+
+                if (!presupuestoDb)
+                {
+                    return BadRequest($"El presupuesto con id {id} no existe");
+                }
+                return Ok();
+
             }
             catch
             {
@@ -132,13 +123,15 @@ namespace Z.Server.Controllers
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> Delete(int id)
         {
-            var presupuesto = await _context.Presupuestos.FindAsync(id);
-            if (presupuesto == null)
+            var r = await repositorio.Existe(id);
+            if (!r)
+            {
                 return NotFound($"El presupuesto con id {id} no existe");
-
-            _context.Presupuestos.Remove(presupuesto);
-            await _context.SaveChangesAsync();
+                
+            }
             return Ok();
+
+
         }
     }
 }

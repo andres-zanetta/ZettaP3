@@ -25,7 +25,7 @@ namespace Z.Server.Repositorio
             return clienteDb;
         }
 
-        public async Task<List<E>> Select()
+        public async Task<List<E>> SelectByRubro()
         {
             return await context.Set<E>().ToListAsync();
         }
