@@ -1,0 +1,28 @@
+﻿@page "/api/Presupuestos"
+@using Z.Client.Servicio
+@inject IHttpServicio http
+@using Z.BD.DATA.Entity
+
+<h3>ListaPresupuesto</h3>
+<br />
+<table>
+    <tr>
+        <th>Id</th>
+        <th>Rubro</th>
+        <th>Total</th>
+
+    </tr>
+    @foreach(var item in listapresupuestos)
+    {
+        <tr>
+            <td>@item.Id</td>
+            <td>@item.Rubro</td>
+            <td>@item.Total</td>
+        </tr>
+    }
+
+</table>
+
+@code {
+    List<Presupuesto> listapresupuestos;
+}
