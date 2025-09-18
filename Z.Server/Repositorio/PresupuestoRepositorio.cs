@@ -22,10 +22,13 @@ namespace Z.Server.Repositorio
             return presupuestos;
         }
 
-        public async Task<IEnumerable<object>> SelectByCliente()
+        public async Task<IEnumerable<object>> SelectByCliente(int id)
         {
-            // Devuelve la lista de presupuestos como IEnumerable<object> para cumplir con la interfaz
-            return await _context.Presupuestos.AsNoTracking().ToListAsync();
+            // Devuelve la lista de presupuestos filtrados por ClienteId como IEnumerable<object>
+            return await _context.Presupuestos
+                .AsNoTracking()
+                .Where(p => p.ClienteId == id)
+                .ToListAsync();
         }
     }
 }

@@ -54,7 +54,7 @@ namespace Z.Server.Controllers
         public async Task<ActionResult<List<Presupuesto>>> GetByCliente(int clienteId)
         {
             // Reemplaza la línea problemática en el método GetByCliente
-            var presupuestos = await repositorio.SelectByCliente();
+            var presupuestos = await repositorio.SelectByCliente(clienteId);
             // Solución: filtra por ClienteId en vez de Cliente
             var filtrados = presupuestos
                 .OfType<Presupuesto>()
